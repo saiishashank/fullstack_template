@@ -4,15 +4,16 @@ const db = require("../database");
 const secret_key = "SAI@SECRET_KEY";
 
 const register = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, role = "user" } = req.body;
   try {
-    const query = "INSERT INTO users (username,password) VALUES (?,?)";
+    const query = "INSERT INTO users (username,password,role) VALUES (?,?,?)";
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
-    const result = await db.query(query, [username, hash]);
+    const result = await db.query(query, [username, hash, role]);
     const payload = {
       id: result.insertId,
       username: username,
+      role: role,
     };
 
     const token = jwt.sign(payload, secret_key, {
@@ -43,6 +44,7 @@ const login = async (req, res) => {
     const payload = {
       username: user.username,
       id: user.id,
+      role: user.role,
     };
     const token = jwt.sign(payload, secret_key, {
       expiresIn: "1h",
@@ -57,5 +59,35 @@ const login = async (req, res) => {
   }
 };
 
+const protect = (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, secret_key);
+      req.user = decoded;
+      next();
+    } catch (err) {
+      console.log("invalid token", err);
+      res.send("invalid token");
+    }
+  }
+  if (!token) {
+    res.send("not authorized, no token provided");
+  }
+};
 
-module.exports = { register, login };
+const authorise = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      console.log(req.user.role);
+      return res.send(" not authorised");
+    }
+    next();
+  };
+};
+
+module.exports = { register, login, protect, authorise };
