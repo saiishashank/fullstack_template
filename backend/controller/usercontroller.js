@@ -40,4 +40,12 @@ const updateuser = async (req, res) => {
   }
 };
 
-module.exports = { getusers, getuserbyid, updateuser };
+const deleteuser= async(req,res)=>{
+   const id=req.params.id;
+   const query="delete from users where id=?";
+   const result=await db.query(query,[id]);
+   res.send({
+    msg:"user deleted successfully",
+   });
+}
+module.exports = { getusers, getuserbyid, updateuser, deleteuser };
