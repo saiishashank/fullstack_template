@@ -1,9 +1,10 @@
-
 import { useForm } from "react-hook-form";
 import "../css/SignUp.css";
 import { Link } from "react-router-dom";
-
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 function SignUp() {
+  const navigate = useNavigate();
   // Initializing the useForm hook
   const {
     register,
@@ -12,8 +13,20 @@ function SignUp() {
   } = useForm();
 
   // This function will be called when the form is successfully validated
-  const onSubmit = (data) => {
-    console.log("Form data submitted:", data);
+  const onSubmit = async (data) => {
+    let res;
+    try {
+       res = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        data
+      );
+      localStorage.setItem("token",res.data.token);
+      navigate("/home");
+    } catch (err) {
+      console.log("signup error", err);
+    }
+
+    console.log(res);
   };
 
   return (
@@ -64,8 +77,8 @@ function SignUp() {
             {...register("password", {
               required: "Password is required",
               minLength: {
-                value: 8,
-                message: "Password must have at least 8 characters",
+                value: 1,
+                message: "Password must have at least 1 character",
               },
             })}
           />

@@ -1,18 +1,28 @@
-
-import { useForm } from 'react-hook-form';
-import '../css/Login.css'; // We'll create this CSS file next
-import {Link} from 'react-router-dom';
+import { useForm } from "react-hook-form";
+import "../css/Login.css";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate } from "react-router-dom";
+import axios from "axios";
 function Login() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
-    console.log("Login data submitted:", data);
-    // Add your API call for authentication here
-    alert(`Logging in with email: ${data.email}`);
+  const onSubmit = async (data) => {
+    let res;
+    try {
+      res = await axios.post("http://localhost:5000/api/auth/login", data);
+      localStorage.setItem("token", res.data.token);
+      navigate("/home");
+    } catch (err) {
+      console.log("login error", err);
+    }
+
+    console.log(res);
   };
 
   return (
@@ -21,7 +31,6 @@ function Login() {
       <p>Please enter your details to log in.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-
         {/* Email Field */}
         <div className="input-group">
           <label htmlFor="email">Email Address</label>
@@ -33,11 +42,13 @@ function Login() {
               required: "Email is required",
               pattern: {
                 value: /^\S+@\S+$/i,
-                message: "Please enter a valid email address"
-              }
+                message: "Please enter a valid email address",
+              },
             })}
           />
-          {errors.email && <span className="error-message">{errors.email.message}</span>}
+          {errors.email && (
+            <span className="error-message">{errors.email.message}</span>
+          )}
         </div>
 
         {/* Password Field */}
@@ -48,22 +59,30 @@ function Login() {
             id="password"
             placeholder="Enter your password"
             {...register("password", {
-              required: "Password is required"
+              required: "Password is required",
             })}
           />
-          {errors.password && <span className="error-message">{errors.password.message}</span>}
-        </div>
-        
-        {/* Forgot Password Link */}
-        <div className="options">
-            <a href="#" className="forgot-password">Forgot Password?</a>
+          {errors.password && (
+            <span className="error-message">{errors.password.message}</span>
+          )}
         </div>
 
-        <button type="submit" className="login-button">Log In</button>
+        {/* Forgot Password Link */}
+        <div className="options">
+          <a href="#" className="forgot-password">
+            Forgot Password?
+          </a>
+        </div>
+
+        <button type="submit" className="login-button">
+          Log In
+        </button>
       </form>
 
       <div className="signup-link">
-        <p>Don't have an account? <Link to='/signup'>Sign Up</Link></p>
+        <p>
+          Don't have an account? <Link to="/signup">Sign Up</Link>
+        </p>
       </div>
     </div>
   );
