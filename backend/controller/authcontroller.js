@@ -4,14 +4,16 @@ const db = require("../database");
 const secret_key = "SAI@SECRET_KEY";
 
 const register = async (req, res) => {
-  const { username, password, role = "user" } = req.body;
+  const { username, email, password, role = "user" } = req.body;
   try {
-    const query = "INSERT INTO users (username,password,role) VALUES (?,?,?)";
+    const query =
+      "INSERT INTO users (username,email,password,role) VALUES (?,?,?,?)";
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
-    const result = await db.query(query, [username, hash, role]);
+    const result = await db.query(query, [username, email, hash, role]);
     const payload = {
       id: result.insertId,
+      email: email,
       username: username,
       role: role,
     };
@@ -19,6 +21,7 @@ const register = async (req, res) => {
     const token = jwt.sign(payload, secret_key, {
       expiresIn: "1h",
     });
+   
     res.status(201).send({
       msg: "successfully registered",
       token: token,
@@ -29,9 +32,9 @@ const register = async (req, res) => {
   }
 };
 const login = async (req, res) => {
-  const { username, password } = req.body;
-  const query = "select * from users where username=?";
-  const result = await db.query(query, [username]);
+  const { email, password } = req.body;
+  const query = "select * from users where email=?";
+  const result = await db.query(query, [email]);
   try {
     if (result.length == 0) {
       return res.status(400).send("user not found");
@@ -42,8 +45,9 @@ const login = async (req, res) => {
       return res.status(400).send("invalid password");
     }
     const payload = {
-      username: user.username,
+      email: user.email,
       id: user.id,
+      username: user.username,
       role: user.role,
     };
     const token = jwt.sign(payload, secret_key, {
